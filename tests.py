@@ -422,6 +422,53 @@ def test_cli():
     assert out.startswith(b"usage: Qt.py"), "\n%s" % out
 
 
+if PYTHON == 2:
+    def test_wrapInstance():
+        """.wrapInstance and .getCppPointer is identical across all bindings"""
+        from Qt import QtCompat, QtWidgets
+
+        app = QtWidgets.QApplication(sys.argv)
+
+        try:
+            button = QtWidgets.QPushButton("Hello world")
+            button.setObjectName("MySpecialButton")
+            pointer = QtCompat.getCppPointer(button)
+            widget = QtCompat.wrapInstance(long(pointer),
+                                           QtWidgets.QWidget)
+            assert isinstance(widget, QtWidgets.QWidget), widget
+            assert widget.objectName() == button.objectName()
+
+            # IMPORTANT: this differs across sip and shiboken.
+            if binding("PySide") or binding("PySide2"):
+                assert widget != button
+            else:
+                assert widget == button
+
+        finally:
+            app.exit()
+
+    def test_implicit_wrapInstance():
+        """.wrapInstance doesn't need the `base` argument"""
+        from Qt import QtCompat, QtWidgets
+
+        app = QtWidgets.QApplication(sys.argv)
+
+        try:
+            button = QtWidgets.QPushButton("Hello world")
+            button.setObjectName("MySpecialButton")
+            pointer = QtCompat.getCppPointer(button)
+            widget = QtCompat.wrapInstance(long(pointer))
+            assert isinstance(widget, QtWidgets.QWidget), widget
+            assert widget.objectName() == button.objectName()
+
+            if binding("PySide") or binding("PySide2"):
+                assert widget != button
+            else:
+                assert widget == button
+
+        finally:
+            app.exit()
+
 if binding("PyQt4"):
     def test_preferred_pyqt4():
         """QT_PREFERRED_BINDING = PyQt4 properly forces the binding"""

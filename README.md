@@ -122,11 +122,21 @@ All members of `Qt` stem directly from those available via PySide2, along with t
 
 Qt.py also provides compatibility wrappers for critical functionality that differs across bindings, these can be found in the added `QtCompat` submodule.
 
+<<<<<<< HEAD
 | Attribute                                 | Returns     | Description
 |:------------------------------------------|:------------|:------------
 | `loadUi(uifile=str, baseinstance=QWidget)` | `QObject`   | Minimal wrapper of PyQt4.loadUi and PySide equivalent
 | `translate(...)`                          | `function`  | Compatibility wrapper around [QCoreApplication.translate][]
 | `setSectionResizeMode()`                  | `method`    | Compatibility wrapper around [QAbstractItemView.setSectionResizeMode][]
+=======
+| Attribute               | Returns     | Description
+|:------------------------|:------------|:------------
+| `loadUi(fname=str)`     | `QObject`   | Minimal wrapper of PyQt4.loadUi and PySide equivalent
+| `translate(...)`        | `function`  | Compatibility wrapper around [QCoreApplication.translate][]
+| `setSectionResizeMode()`| `method`    | Compatibility wrapper around [QAbstractItemView.setSectionResizeMode][]
+| `wrapInstance(addr=long, type=QObject)` | `QObject` | Wrapper around `shiboken2.wrapInstance` and PyQt equivalent
+| `getCppPointer(object=QObject)`    | `long`      | Wrapper around `shiboken2.getCppPointer` and PyQt equivalent
+>>>>>>> fred/implement59
 
 [QCoreApplication.translate]: https://doc.qt.io/qt-5/qcoreapplication.html#translate
 [QAbstractItemView.setSectionResizeMode]: https://doc.qt.io/qt-5/qheaderview.html#setSectionResizeMode

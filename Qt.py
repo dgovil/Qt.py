@@ -625,6 +625,55 @@ def _setup(module, extras):
             setattr(Qt, name, _new_module(name))
 
 
+def _wrapinstance(func, ptr, base=None):
+    """Enable implicit cast of pointer to most suitable class
+
+    This behaviour is available in sip per default.
+
+    Based on http://nathanhorne.com/pyqtpyside-wrap-instance
+
+    Usage:
+        This mechanism kicks in under these circumstances.
+        1. Qt.py is using PySide 1 or 2.
+        2. A `base` argument is not provided.
+
+        See :func:`QtCompat.wrapInstance()`
+
+    Arguments:
+        func (function): Original function
+        ptr (long): Pointer to QObject in memory
+        base (QObject, optional): Base class to wrap with. Defaults to QObject,
+            which should handle anything.
+
+    """
+    # Python 3 no longer has a long type
+    try:
+        int_type = long
+    except NameError:
+        int_type = int
+
+    assert isinstance(ptr, int_type), "Argument 'ptr' must be of type <%s>" % (int_type.__name__)
+    assert (base is None) or issubclass(base, Qt.QtCore.QObject), (
+        "Argument 'base' must be of type <QObject>")
+
+    if base is None:
+        q_object = func(int_type(ptr), Qt.QtCore.QObject)
+        meta_object = q_object.metaObject()
+        class_name = meta_object.className()
+        super_class_name = meta_object.superClass().className()
+
+        if hasattr(Qt.QtWidgets, class_name):
+            base = getattr(Qt.QtWidgets, class_name)
+
+        elif hasattr(Qt.QtWidgets, super_class_name):
+            base = getattr(Qt.QtWidgets, super_class_name)
+
+        else:
+            base = Qt.QtCore.QObject
+
+    return func(int_type(ptr), base)
+
+
 def _pyside2():
     """Initialise PySide2
 
@@ -639,6 +688,18 @@ def _pyside2():
     _setup(module, ["QtUiTools"])
 
     Qt.__binding_version__ = module.__version__
+
+    try:
+        import shiboken2
+        Qt.QtCompat.wrapInstance = (
+            lambda ptr, base=None: _wrapinstance(
+                shiboken2.wrapInstance, ptr, base)
+        )
+        Qt.QtCompat.getCppPointer = lambda object: \
+            shiboken2.getCppPointer(object)[0]
+
+    except ImportError:
+        pass  # Optional
 
     if hasattr(Qt, "_QtUiTools"):
         Qt.QtCompat.loadUi = _loadUi
@@ -672,6 +733,18 @@ def _pyside():
     _setup(module, ["QtUiTools"])
 
     Qt.__binding_version__ = module.__version__
+
+    try:
+        import shiboken
+        Qt.QtCompat.wrapInstance = (
+            lambda ptr, base=None: _wrapinstance(
+                shiboken.wrapInstance, ptr, base)
+        )
+        Qt.QtCompat.getCppPointer = lambda object: \
+            shiboken.getCppPointer(object)[0]
+
+    except ImportError:
+        pass  # Optional
 
     if hasattr(Qt, "_QtUiTools"):
         Qt.QtCompat.loadUi = _loadUi
@@ -715,6 +788,18 @@ def _pyqt5():
 
     import PyQt5 as module
     _setup(module, ["uic"])
+
+    try:
+        import sip
+        Qt.QtCompat.wrapInstance = (
+            lambda ptr, base=None: _wrapinstance(
+                sip.wrapinstance, ptr, base)
+        )
+        Qt.QtCompat.getCppPointer = lambda object: \
+            sip.unwrapinstance(object)
+
+    except ImportError:
+        pass  # Optional
 
     if hasattr(Qt, "_uic"):
         Qt.QtCompat.loadUi = _loadUi
@@ -780,6 +865,18 @@ def _pyqt4():
 
     import PyQt4 as module
     _setup(module, ["uic"])
+
+    try:
+        import sip
+        Qt.QtCompat.wrapInstance = (
+            lambda ptr, base=None: _wrapinstance(
+                sip.wrapinstance, ptr, base)
+        )
+        Qt.QtCompat.getCppPointer = lambda object: \
+            sip.unwrapinstance(object)
+
+    except ImportError:
+        pass  # Optional
 
     if hasattr(Qt, "_uic"):
         Qt.QtCompat.loadUi = _loadUi
